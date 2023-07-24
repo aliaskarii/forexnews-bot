@@ -1,53 +1,27 @@
 use serde::Deserialize;
-use reqwest::{self, Response};
-const JSON_URL: &str = "https://nfs.faireconomy.media/ff_calendar_thisweek.json?version=e7ef4a21d0d488b886475f77d0ca5806";
-use std::io;
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct JsonData {
+struct NewsItem {
     title: String,
+    #[allow(dead_code)]
     country: String,
+    #[allow(dead_code)]
     date: String,
     impact: String,
+    #[allow(dead_code)]
     forecast: String,
+    #[allow(dead_code)]
     previous: String,
 }
 
-//Json Example News
-/*r#"[{
-    "title": "G20 Meetings",
-    "country": "ALL",
-    "date": "2023-07-16T00:45:00-04:00",
-    "impact": "Medium",
-    "forecast": "",
-    "previous": ""
-},
-{
-    "title": "G7 Meetings",
-    "country": "ALL",
-    "date": "2023-07-16T00:45:00-04:00",
-    "impact": "Low",
-    "forecast": "",
-    "previous": ""
-}]"#*/
+const URL: &str = "https://nfs.faireconomy.media/ff_calendar_thisweek.json?version=e7ef4a21d0d488b886475f77d0ca5806";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = reqwest::Client::builder().build()?;
-
-    let res = client
-        .get(JSON_URL)
-        .send()
-        .await?
-        .bytes()
-        .await?;
-
-    let mut data = res.as_ref();
-
-    let mut f = File::create("week.json")?;
-
-    io::copy(&mut data, &mut f)?;
-
-    Ok(())
+fn main() {
+    let response = minreq::get(URL).with_timeout(8).send().unwrap();
+    let news: Vec<NewsItem> = serde_json::from_str(response.as_str().unwrap()).unwrap();
+    news
+        .iter()
+        .filter(|x| x.impact == "High")
+        .map(|x| &x.title)
+        .for_each(|t| println!("title: {title}", title=t));
 }
