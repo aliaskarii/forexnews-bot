@@ -1,11 +1,10 @@
 use rusqlite::{Connection, Result};
 use rusqlite::NO_PARAMS;
-use std::collections::HashMap;
 
 
 fn main() -> Result<()> {
-    let conn = sqlite::open("news.db").unwrap();
-    conn.execute(
+    let conn = Connection::open("news.db")?;
+        conn.execute(
         "create table if not exists news (
             id integer primary key,
             title TEXT, 
