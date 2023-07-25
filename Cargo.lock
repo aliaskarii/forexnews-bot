@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "News-parser"
+version = "1.0.0"
+dependencies = [
+ "minreq",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1212,15 +1221,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20f34339676cdcab560c9a82300c4c2581f68b9369aedf0fae86f2ff9565ff3e"
 
 [[package]]
-name = "telegram-forex-factory-news-publisher"
-version = "0.1.0"
+name = "telegram-bot"
+version = "1.0.0"
 dependencies = [
  "dotenvy",
  "log",
- "minreq",
  "pretty_env_logger",
- "serde",
- "serde_json",
  "teloxide",
  "tokio",
 ]
