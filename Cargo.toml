@@ -2,6 +2,7 @@
 members = [
     "telegram-bot",
     "News-parser",
+    "db",
 ]
 
 

@@ -1,7 +1,6 @@
 use minreq::{Response, Error, Request};
 use serde::Deserialize;
-use sqlite;
-#[derive(Debug, Deserialize)]
+
 struct NewsItem {
     title: String,
     #[allow(dead_code)]
@@ -31,18 +30,5 @@ fn main() {
         .filter(|x| x.impact == "High")
         .for_each(|t| println!("{:#?}",t));
 
-    let connection = sqlite::open(":memory:").unwrap();
-
-    let query = "
-        CREATE TABLE news (
-            title TEXT, 
-            country TEXT,
-            date DATE ,
-            impact TEXT,
-            forecast TEXT,
-            previous TEXT
-        );
-    ";
-    connection.execute(query).unwrap();
-   
+    
 }
