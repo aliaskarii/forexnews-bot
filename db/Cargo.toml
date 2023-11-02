@@ -1,8 +1,0 @@
-[package]
-name = "db" 
-version.workspace = true
-edition.workspace = true
-
-
-[dependencies]
-rusqlite = "0.29.0"
