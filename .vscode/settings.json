@@ -1,7 +1,0 @@
-{
-    "editor.fontSize": 17,
-    "rust-analyzer.linkedProjects": [
-        "./telegram-bot/Cargo.toml",
-        "./telegram-bot/Cargo.toml"
-    ]
-}
