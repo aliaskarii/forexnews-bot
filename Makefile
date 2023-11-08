@@ -12,13 +12,13 @@ endif
 build:
 	rm -rfv ./bin
 	mkdir -vp ./bin
-	go build -tags urfave_cli_no_docs -trimpath -buildvcs=false -ldflags "-extldflags '-static' -s -w -buildid='' -X 'main.AppVersion=${app_version}' -X 'main.AppCompileTime=$(shell date --iso-8601=seconds)' -X 'main.AppName=fx-news'" -o ./bin/ingest .
+	go build -tags urfave_cli_no_docs -trimpath -buildvcs=false -ldflags "-extldflags '-static' -s -w -buildid='' -X 'main.AppVersion=${app_version}' -X 'main.AppCompileTime=$(shell date --iso-8601=seconds)' -X 'main.AppName=ConismaBot'" -o ./bin/ingest .
 .PHONY: build
 
 build-debug:
 	rm -rfv ./bin
 	mkdir -vp ./bin
-	go build -tags urfave_cli_no_docs -buildvcs=false -ldflags "-compressdwarf=false -extldflags '-static' -buildid='' -X 'main.AppVersion=${app_version}' -X 'main.AppCompileTime=$(shell date --iso-8601=seconds)' -X 'main.AppName=fx-news'" -o ./bin/ingest .
+	go build -tags urfave_cli_no_docs -buildvcs=false -ldflags "-compressdwarf=false -extldflags '-static' -buildid='' -X 'main.AppVersion=${app_version}' -X 'main.AppCompileTime=$(shell date --iso-8601=seconds)' -X 'main.AppName=ConismaBot'" -o ./bin/ingest .
 .PHONY: build-debug
 
 build-clean: clean build

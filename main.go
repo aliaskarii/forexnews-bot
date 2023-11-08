@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -53,6 +54,7 @@ type NewsItem struct {
 	Actual         string `json:"actual"`
 }
 
+//go:embed profile.png
 var botPNG []byte
 
 func main() {
