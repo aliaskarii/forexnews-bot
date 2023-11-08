@@ -25,7 +25,7 @@ func buildBot(log zerolog.Logger) func(*cli.Context) error {
 			}
 			log.Warn().Msg(".env file not found")
 		}
-
+		loadAllowedUserIDs(log)
 		handler := Handler{
 			logger: log.With().Str("app", "handler").Logger(),
 		}
