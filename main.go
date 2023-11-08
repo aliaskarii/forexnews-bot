@@ -31,7 +31,7 @@ const (
 	BotTokenEnvKey       = "BOT_TOKEN"
 	BotHTTPProxyURL      = "BOT_HTTP_PROXY_URL"
 	ParseModeMarkdownV1  = models.ParseMode("Markdown")
-	CommandList          = "/newslist"
+	CommandNewsList      = "/newslist"
 	CommandStart         = "/start"
 	CLICommandBotName    = "bot"
 )
@@ -84,7 +84,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("command failed")
 	}
-
 }
 
 func (h *Handler) handleStartCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -92,6 +91,18 @@ func (h *Handler) handleStartCommand(ctx context.Context, b *bot.Bot, update *mo
 		return
 	}
 	if !isFromAllowedUser(update.Message.From.ID) {
+		if _, err := b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text: strings.Join(
+				[]string{
+					fmt.Sprintf("Your not Allowed User"),
+				},
+				"\n",
+			),
+			ParseMode: models.ParseModeMarkdown,
+		}); nil != err {
+			h.logger.Error().Err(err).Msg("failed to send start command success reply message")
+		}
 		return
 	}
 
@@ -109,7 +120,7 @@ func (h *Handler) handleStartCommand(ctx context.Context, b *bot.Bot, update *mo
 				Description: "Restart Me",
 			},
 			{
-				Command:     CommandList,
+				Command:     CommandNewsList,
 				Description: "News List",
 			},
 		},
@@ -153,12 +164,12 @@ func (h *Handler) handleListCommand(ctx context.Context, b *bot.Bot, update *mod
 	chatID := update.Message.Chat.ID
 	msgID := update.Message.ID
 
-	args := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, CommandList))
+	args := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, CommandNewsList))
 	pageNo, err := strconv.Atoi(args)
 	if len(args) != 0 && nil != err || pageNo < 0 {
 		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:    chatID,
-			Text:      fmt.Sprintf("Use `%s page_no` message format.", CommandList),
+			Text:      fmt.Sprintf("Use `%s page_no` message format.", CommandNewsList),
 			ParseMode: ParseModeMarkdownV1,
 		})
 		if nil != err {

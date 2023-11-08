@@ -54,7 +54,7 @@ func buildBot(log zerolog.Logger) func(*cli.Context) error {
 			log.Fatal().Err(err).Msg("failed to initialize bot instance")
 		}
 		b.RegisterHandler(bot.HandlerTypeMessageText, CommandStart, bot.MatchTypeExact, handler.handleStartCommand)
-		b.RegisterHandler(bot.HandlerTypeMessageText, CommandList, bot.MatchTypePrefix, handler.handleListCommand)
+		b.RegisterHandler(bot.HandlerTypeMessageText, CommandNewsList, bot.MatchTypePrefix, handler.handleListCommand)
 		b.Start(ctx)
 
 		return nil
