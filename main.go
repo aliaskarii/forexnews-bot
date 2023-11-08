@@ -27,19 +27,13 @@ var (
 )
 
 const (
-	AllowedUserIDsEnvKey  = "ALLOWED_USER_IDS"
-	BotTokenEnvKey        = "BOT_TOKEN"
-	BotHTTPProxyURL       = "BOT_HTTP_PROXY_URL"
-	ParseModeMarkdownV1   = models.ParseMode("Markdown")
-	CommandDeactivate     = "/deactivate"
-	CommandActivate       = "/activate"
-	CommandList           = "/list"
-	CommandStart          = "/start"
-	CLICommandBotName     = "bot"
-	CLICommandDumpName    = "dump"
-	CLICommandBotFlagAddr = "addr"
-	CLIFlagDB             = "db"
-	CLICommandBotFlagConf = "conf"
+	AllowedUserIDsEnvKey = "ALLOWED_USER_IDS"
+	BotTokenEnvKey       = "BOT_TOKEN"
+	BotHTTPProxyURL      = "BOT_HTTP_PROXY_URL"
+	ParseModeMarkdownV1  = models.ParseMode("Markdown")
+	CommandList          = "/newslist"
+	CommandStart         = "/start"
+	CLICommandBotName    = "bot"
 )
 
 /*
@@ -62,40 +56,6 @@ type NewsItem struct {
 var botPNG []byte
 
 func main() {
-	url := "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-
-	client := resty.New()
-
-	resp, err := client.R().EnableTrace().Get(url)
-	if err != nil {
-		fmt.Printf("Failed to fetch data: %v\n", err)
-		return
-	}
-	if resp.StatusCode() == 200 {
-		var newsData []NewsItem
-
-		err := json.Unmarshal(resp.Body(), &newsData)
-		if err != nil {
-			fmt.Printf("Failed to parse JSON: %v\n", err)
-			return
-		}
-
-		sort.SliceStable(newsData, func(i, j int) bool {
-			return newsData[i].CurrencyImpact > newsData[j].CurrencyImpact
-		})
-
-		for _, news := range newsData {
-			fmt.Printf("Event: %s\n", news.Title)
-			fmt.Printf("Currency Impact: %s\n", news.CurrencyImpact)
-			fmt.Printf("Date: %s\n", news.Date)
-			fmt.Printf("Actual: %s\n", news.Actual)
-			fmt.Printf("Forecast: %s\n", news.Forecast)
-			fmt.Printf("Previous: %s\n\n", news.Previous)
-		}
-	} else {
-		fmt.Printf("Failed to fetch data. Status code: %d\n", resp.StatusCode())
-	}
-
 	compileTime, err := time.Parse(time.RFC3339, AppCompileTime)
 	if nil != err {
 		panic(err)
@@ -117,14 +77,6 @@ func main() {
 				Usage:   "Starts bot server",
 				Aliases: []string{"b"},
 				Action:  buildBot(log),
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:     CLICommandBotFlagAddr,
-						Aliases:  []string{"a"},
-						Usage:    "Server public hostname",
-						Required: true,
-					},
-				},
 			},
 		},
 	}
@@ -158,7 +110,7 @@ func (h *Handler) handleStartCommand(ctx context.Context, b *bot.Bot, update *mo
 			},
 			{
 				Command:     CommandList,
-				Description: "List News",
+				Description: "News List",
 			},
 		},
 	}); nil != err {
@@ -285,6 +237,41 @@ func isFromAllowedUser(uid int64) bool {
 }
 
 type Handler struct {
-	logger     zerolog.Logger
-	ServerAddr string
+	logger zerolog.Logger
+}
+
+func fetch_news_data() {
+	url := "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+
+	client := resty.New()
+
+	resp, err := client.R().EnableTrace().Get(url)
+	if err != nil {
+		fmt.Printf("Failed to fetch data: %v\n", err)
+		return
+	}
+	if resp.StatusCode() == 200 {
+		var newsData []NewsItem
+
+		err := json.Unmarshal(resp.Body(), &newsData)
+		if err != nil {
+			fmt.Printf("Failed to parse JSON: %v\n", err)
+			return
+		}
+
+		sort.SliceStable(newsData, func(i, j int) bool {
+			return newsData[i].CurrencyImpact > newsData[j].CurrencyImpact
+		})
+
+		for _, news := range newsData {
+			fmt.Printf("Event: %s\n", news.Title)
+			fmt.Printf("Currency Impact: %s\n", news.CurrencyImpact)
+			fmt.Printf("Date: %s\n", news.Date)
+			fmt.Printf("Actual: %s\n", news.Actual)
+			fmt.Printf("Forecast: %s\n", news.Forecast)
+			fmt.Printf("Previous: %s\n\n", news.Previous)
+		}
+	} else {
+		fmt.Printf("Failed to fetch data. Status code: %d\n", resp.StatusCode())
+	}
 }

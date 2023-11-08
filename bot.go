@@ -27,8 +27,7 @@ func buildBot(log zerolog.Logger) func(*cli.Context) error {
 		}
 
 		handler := Handler{
-			logger:     log.With().Str("app", "handler").Logger(),
-			ServerAddr: cliCtx.String(CLICommandBotFlagAddr),
+			logger: log.With().Str("app", "handler").Logger(),
 		}
 
 		httpTransport := http.Transport{IdleConnTimeout: 10 * time.Second, ResponseHeaderTimeout: 30 * time.Second}
