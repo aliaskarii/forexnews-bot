@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +27,7 @@ var (
 )
 
 const (
+	NewsUrlEnvKey        = "NEWS_URL"
 	AllowedUserIDsEnvKey = "ALLOWED_USER_IDS"
 	BotTokenEnvKey       = "BOT_TOKEN"
 	BotHTTPProxyURL      = "BOT_HTTP_PROXY_URL"
@@ -45,13 +45,13 @@ const (
 "previous":"0.2%
 */
 type NewsItem struct {
-	Title          string `json:"title"`
-	Country        string `json:"country"`
-	Date           string `json:"date"`
-	CurrencyImpact string `json:"impact"`
-	Forecast       string `json:"forecast"`
-	Previous       string `json:"previous"`
-	Actual         string `json:"actual"`
+	Title          string    `json:"title"`
+	Country        string    `json:"country"`
+	Date           time.Time `json:"date"`
+	CurrencyImpact string    `json:"impact"`
+	Forecast       string    `json:"forecast"`
+	Previous       string    `json:"previous"`
+	Actual         string    `json:"actual"`
 }
 
 //go:embed profile.png
@@ -123,7 +123,7 @@ func (h *Handler) handleStartCommand(ctx context.Context, b *bot.Bot, update *mo
 			},
 			{
 				Command:     CommandNewsList,
-				Description: "News List",
+				Description: "Today Important News List",
 			},
 		},
 	}); nil != err {
@@ -165,6 +165,7 @@ func (h *Handler) handleListCommand(ctx context.Context, b *bot.Bot, update *mod
 
 	chatID := update.Message.Chat.ID
 	msgID := update.Message.ID
+	fetchNewsItem(h.logger)
 
 	args := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, CommandNewsList))
 	pageNo, err := strconv.Atoi(args)
@@ -182,22 +183,6 @@ func (h *Handler) handleListCommand(ctx context.Context, b *bot.Bot, update *mod
 		pageNo = 0
 	}
 
-	// for _, news := range newsData {
-	// 	message := "Top news by Currency Impact:\n\n"
-	// 	message += fmt.Sprintf("Event: %s\n", news.Title)
-	// 	message += fmt.Sprintf("Data: %s\n", news.Date)
-	// 	message += fmt.Sprintf("Currency Impact: %s\n", news.CurrencyImpact)
-	// 	message += fmt.Sprintf("Actual: %s\n", news.Actual)
-	// 	message += fmt.Sprintf("Forecast: %s\n", news.Forecast)
-	// 	message += fmt.Sprintf("Previous: %s\n\n", news.Previous)
-	// 	msg := tgbotapi.NewMessage(chatID, message)
-
-	// 	if _, err := bot.Send(msg); err != nil {
-	// 		fmt.Printf("Failed to send message: %v\n", err)
-	// 	}
-
-	// }
-
 	loadingMessage, err := b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:           chatID,
 		Text:             "Listing news. Please wait...",
@@ -208,22 +193,31 @@ func (h *Handler) handleListCommand(ctx context.Context, b *bot.Bot, update *mod
 		h.logger.Error().Err(err).Msg("failed to send loading reply message to the user")
 	}
 
-	//list, err := h.listnews(ctx, pageNo)
 	if _, err := b.DeleteMessage(ctx, &bot.DeleteMessageParams{ChatID: chatID, MessageID: loadingMessage.ID}); nil != err {
 		h.logger.Error().Err(err).Int("previousLoadingMessageId", loadingMessage.ID).Msg("failed to delete previous loading message")
 	}
-	if nil != err {
-		h.logger.Error().Err(err).Int64("chatID", chatID).Int("pageNo", pageNo).Msg("failed to get list of news")
-		return
-	}
-	msg := bot.SendMessageParams{
-		ChatID:    chatID,
-		ParseMode: ParseModeMarkdownV1,
-	}
-	//msg
-	if _, err := b.SendMessage(ctx, &msg); nil != err {
-		h.logger.Error().Err(err).Msg("failed to send reply message")
-		return
+	currentTime := time.Now()
+	for _, news := range newsData {
+
+		if news.Date.Month() == currentTime.Month() && news.Date.Year() == currentTime.Year() && news.Date.Day() == currentTime.Day() {
+			if news.CurrencyImpact == "High" || news.CurrencyImpact == "Medium" {
+				if _, err := b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: update.Message.Chat.ID,
+					Text: strings.Join(
+						[]string{
+							fmt.Sprintf("*%s*", string(news.Title)),
+							fmt.Sprintf("%s  %s  %v  %v", news.Country, news.CurrencyImpact, news.Previous, news.Forecast),
+							fmt.Sprintf("%s", news.Date.Format("15:04:00")),
+						},
+						"\n",
+					),
+					ParseMode: models.ParseModeMarkdown,
+				}); nil != err {
+					h.logger.Error().Err(err).Msg("failed to send news item  success reply message")
+				}
+			}
+		}
+
 	}
 }
 
@@ -253,38 +247,27 @@ type Handler struct {
 	logger zerolog.Logger
 }
 
-func fetch_news_data() {
-	url := "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+var newsData []NewsItem
+
+func fetchNewsItem(log zerolog.Logger) {
+	url, ok := os.LookupEnv(NewsUrlEnvKey)
+	if !ok {
+		log.Fatal().Str("key", NewsUrlEnvKey).Msg("required environment variable is not set")
+	}
 
 	client := resty.New()
 
 	resp, err := client.R().EnableTrace().Get(url)
 	if err != nil {
-		fmt.Printf("Failed to fetch data: %v\n", err)
-		return
+		log.Error().Err(err).Msg("failed to get url data")
 	}
 	if resp.StatusCode() == 200 {
-		var newsData []NewsItem
 
 		err := json.Unmarshal(resp.Body(), &newsData)
 		if err != nil {
-			fmt.Printf("Failed to parse JSON: %v\n", err)
-			return
-		}
-
-		sort.SliceStable(newsData, func(i, j int) bool {
-			return newsData[i].CurrencyImpact > newsData[j].CurrencyImpact
-		})
-
-		for _, news := range newsData {
-			fmt.Printf("Event: %s\n", news.Title)
-			fmt.Printf("Currency Impact: %s\n", news.CurrencyImpact)
-			fmt.Printf("Date: %s\n", news.Date)
-			fmt.Printf("Actual: %s\n", news.Actual)
-			fmt.Printf("Forecast: %s\n", news.Forecast)
-			fmt.Printf("Previous: %s\n\n", news.Previous)
+			log.Error().Err(err).Msg("failed to parse json data")
 		}
 	} else {
-		fmt.Printf("Failed to fetch data. Status code: %d\n", resp.StatusCode())
+		log.Error().Int("StatusCode: ", resp.StatusCode()).Msg("failed to fetch data StatusCode is not 200")
 	}
 }
